@@ -8,6 +8,9 @@ import {
 
 import { createAppKit } from "@reown/appkit";
 import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
+import { NFTEvolutionPreview } from "./components/NFTEvolutionPreview";
+import { UserProfile } from "./components/UserProfile";
 
 export const projectId = process.env.NEXT_PUBLIC_PROJECT_ID;
 
@@ -45,105 +48,115 @@ const colors = {
   gold: "#FFD700",
   silver: "#E8E8E8",
   silverShine: "#F4F4F4",
-  darkBlue: "#00008B",
-  neon: "#39FF14",
-  metallic: "linear-gradient(180deg, #FFFFFF 0%, #C0C0C0 47.92%, #787878 100%)",
+  platinumGlow: "#E5E4E2",
+  chrome: "linear-gradient(180deg, #FFFFFF 0%, #C0C0C0 47.92%, #787878 100%)",
+  neonSilver: "linear-gradient(to right, #C0C0C0, #FFFFFF, #C0C0C0)",
+};
+
+// Add a custom hook for wallet connection status
+const useWalletStatus = () => {
+  const [isConnected, setIsConnected] = useState(false);
+
+  useEffect(() => {
+    // Listen for wallet connection events
+    const checkConnection = () => {
+      const walletElement = document.querySelector("appkit-button");
+      const isConnected = walletElement?.getAttribute("connected") === "true";
+      setIsConnected(isConnected);
+    };
+
+    // Check initially and set up observer
+    checkConnection();
+    const observer = new MutationObserver(checkConnection);
+    const walletElement = document.querySelector("appkit-button");
+
+    if (walletElement) {
+      observer.observe(walletElement, { attributes: true });
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
+  return isConnected;
 };
 
 export default function Home() {
+  const isWalletConnected = useWalletStatus();
+  const [userStats, setUserStats] = useState({
+    loginStreak: 3,
+    swapsCompleted: 2,
+    referrals: 1,
+  });
+
   return (
-    <main className="flex min-h-screen flex-col items-center p-8 bg-gradient-to-br from-[#00008B] via-black to-[#000033]">
-      {/* Hero Section with enhanced animations */}
+    <main className="flex min-h-screen flex-col items-center p-8">
+      {/* Hero Section */}
       <motion.section
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8 }}
         className="w-full max-w-7xl mb-16 text-center relative"
       >
-        {/* Animated shine effect background */}
-        <motion.div
-          className="absolute inset-0 bg-gradient-to-r from-transparent via-[#F4F4F4]/20 to-transparent"
-          animate={{
-            x: ["-100%", "100%"],
-          }}
-          transition={{
-            repeat: Infinity,
-            duration: 3,
-            ease: "linear",
-          }}
-        />
-
-        <motion.h1
-          className="text-6xl font-bold mb-4 relative"
-          style={{
-            background: `linear-gradient(
-              to right,
-              #FFD700,
-              #FFF,
-              #FFD700,
-              #C0C0C0,
-              #39FF14
-            )`,
-            backgroundSize: "200% auto",
-            WebkitBackgroundClip: "text",
-            backgroundClip: "text",
-            color: "transparent",
-            textShadow: "0 0 20px rgba(255,215,0,0.3)",
-          }}
-          animate={{
-            backgroundPosition: ["0% center", "200% center"],
-          }}
-          transition={{
-            duration: 8,
-            repeat: Infinity,
-            repeatType: "reverse",
-          }}
-        >
+        <h1 className="text-6xl font-bold mb-4 bg-gradient-to-r from-[#FFD700] via-[#FFFFFF] to-[#FFD700] bg-clip-text text-transparent">
           Social Soulbound NFT Gallery
-        </motion.h1>
-
-        <motion.p
-          className="text-xl relative z-10"
-          style={{
-            background: `linear-gradient(to right, #C0C0C0, #FFF, #C0C0C0)`,
-            WebkitBackgroundClip: "text",
-            backgroundClip: "text",
-            color: "transparent",
-          }}
-          animate={{
-            opacity: [0.7, 1, 0.7],
-          }}
-          transition={{
-            duration: 2,
-            repeat: Infinity,
-          }}
-        >
+        </h1>
+        <p className="text-xl bg-gradient-to-r from-[#C0C0C0] via-[#FFFFFF] to-[#C0C0C0] bg-clip-text text-transparent mb-8">
           Evolving AI-generated artwork based on your social activity
-        </motion.p>
+        </p>
+
+        {!isWalletConnected && (
+          <motion.div
+            className="max-w-md mx-auto bg-gradient-to-br from-white/5 to-white/10 backdrop-blur-md rounded-xl p-6 mb-12 border border-white/20"
+            whileHover={{
+              scale: 1.02,
+              boxShadow: "0 0 30px rgba(255, 255, 255, 0.2)",
+            }}
+          >
+            <h2 className="text-xl font-semibold mb-4 bg-gradient-to-r from-[#FFD700] to-[#FFFFFF] bg-clip-text text-transparent">
+              Connect Your Wallet
+            </h2>
+            <div className="flex flex-col items-center gap-4">
+              <div className="w-full max-w-xs">
+                <appkit-button />
+              </div>
+              <div className="w-full max-w-xs">
+                <appkit-network-button />
+              </div>
+            </div>
+          </motion.div>
+        )}
       </motion.section>
 
-      {/* Enhanced Gallery Grid */}
-      <motion.section
-        className="w-full max-w-7xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
-        variants={{
-          hidden: { opacity: 0 },
-          show: {
-            opacity: 1,
-            transition: { staggerChildren: 0.2 },
-          },
-        }}
-        initial="hidden"
-        animate="show"
-      >
-        {[1, 2, 3, 4, 5, 6].map((i) => (
-          <NFTCard key={i} index={i} />
-        ))}
-      </motion.section>
+      {isWalletConnected && (
+        <>
+          <div className="w-full max-w-7xl grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+            <UserProfile stats={userStats} />
+            <NFTEvolutionPreview currentLevel={2} />
+          </div>
+
+          <motion.section
+            className="w-full max-w-7xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+            variants={{
+              hidden: { opacity: 0 },
+              show: {
+                opacity: 1,
+                transition: { staggerChildren: 0.2 },
+              },
+            }}
+            initial="hidden"
+            animate="show"
+          >
+            {[1, 2, 3].map((i) => (
+              <NFTCard key={i} index={i} />
+            ))}
+          </motion.section>
+        </>
+      )}
     </main>
   );
 }
 
-// Enhanced NFT Card Component
+// Enhanced NFT Card Component with silver effects
 const NFTCard = ({ index }: { index: number }) => {
   return (
     <motion.div
@@ -154,16 +167,16 @@ const NFTCard = ({ index }: { index: number }) => {
       whileHover={{
         scale: 1.05,
         boxShadow: `
-          0 0 20px rgba(57, 255, 20, 0.2),
-          0 0 40px rgba(255, 215, 0, 0.2),
-          0 0 60px rgba(192, 192, 192, 0.1)
+          0 0 20px rgba(255, 255, 255, 0.3),
+          0 0 40px rgba(192, 192, 192, 0.2),
+          0 0 60px rgba(255, 215, 0, 0.1)
         `,
       }}
-      className="relative bg-gradient-to-br from-[#00008B]/90 to-black/90 rounded-xl overflow-hidden border border-[#FFD700]/30"
+      className="relative bg-gradient-to-br from-[#1a1a1a] to-black rounded-xl overflow-hidden border border-white/20"
     >
-      {/* Metallic shine effect */}
+      {/* Enhanced metallic shine effect */}
       <motion.div
-        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"
+        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
         animate={{
           x: ["-200%", "200%"],
         }}
@@ -178,8 +191,8 @@ const NFTCard = ({ index }: { index: number }) => {
         className="aspect-square relative"
         whileHover={{ scale: 1.02 }}
       >
-        {/* NFT Image with enhanced gradient */}
-        <div className="absolute inset-0 bg-[conic-gradient(at_top_right,_var(--tw-gradient-stops))] from-[#FFD700] via-[#C0C0C0] to-[#39FF14] opacity-80" />
+        {/* NFT Image with silver gradient */}
+        <div className="absolute inset-0 bg-[conic-gradient(at_top_right,_var(--tw-gradient-stops))] from-[#C0C0C0] via-[#FFFFFF] to-[#E8E8E8] opacity-80" />
         <motion.div
           className="absolute inset-0 bg-black/50"
           whileHover={{ opacity: 0 }}
@@ -193,27 +206,28 @@ const NFTCard = ({ index }: { index: number }) => {
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2 }}
       >
-        <h3 className="text-lg font-semibold mb-2 bg-gradient-to-r from-[#FFD700] to-[#FFF] bg-clip-text text-transparent">
+        <h3 className="text-lg font-semibold mb-2 bg-gradient-to-r from-[#C0C0C0] to-[#FFFFFF] bg-clip-text text-transparent">
           Dynamic SBT #{index}
         </h3>
         <div className="flex justify-between items-center">
           <motion.button
-            className="flex items-center space-x-1 text-[#39FF14]"
+            className="flex items-center space-x-1"
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
           >
-            <HeartIcon className="w-5 h-5" />
-            <span className="text-[#39FF14] font-medium">{123 + index}</span>
+            <HeartIcon className="w-5 h-5 text-[#C0C0C0]" />
+            <span className="bg-gradient-to-r from-[#C0C0C0] to-[#FFFFFF] bg-clip-text text-transparent font-medium">
+              {123 + index}
+            </span>
           </motion.button>
           <motion.div
-            className="text-sm bg-gradient-to-r from-[#C0C0C0] to-[#FFF] bg-clip-text text-transparent font-medium"
+            className="text-sm bg-gradient-to-r from-[#C0C0C0] to-[#FFFFFF] bg-clip-text text-transparent font-medium"
             animate={{
-              opacity: [0.5, 1, 0.5],
-              scale: [1, 1.05, 1],
+              opacity: [0.7, 1, 0.7],
               textShadow: [
-                "0 0 5px rgba(192,192,192,0.3)",
-                "0 0 20px rgba(192,192,192,0.5)",
-                "0 0 5px rgba(192,192,192,0.3)",
+                "0 0 5px rgba(255,255,255,0.3)",
+                "0 0 20px rgba(255,255,255,0.5)",
+                "0 0 5px rgba(255,255,255,0.3)",
               ],
             }}
             transition={{
